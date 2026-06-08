@@ -5,6 +5,8 @@ src/
 │   ├── Sidebar.jsx
 │   ├── Gallery.jsx
 │   └── Header.jsx
+│   └── ImportPanel.jsx (handles all import methods)
+│   └── Header.jsx
 |
 ├── App.jsx  (main layout)
 ├── Sidebar.jsx (navigation + stats)
