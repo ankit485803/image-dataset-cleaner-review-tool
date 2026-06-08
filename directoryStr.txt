@@ -1,0 +1,16 @@
+
+
+src/
+├── components/
+│   ├── Sidebar.jsx
+│   ├── Gallery.jsx
+│   └── Header.jsx
+|
+├── App.jsx  (main layout)
+├── Sidebar.jsx (navigation + stats)
+├── Header.jsx (top bar)
+├── Gallery.jsx (empty grid placeholder for now)
+├── App.css   (styling)
+└── index.js
+
+
