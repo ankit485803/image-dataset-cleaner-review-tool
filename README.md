@@ -1,70 +1,186 @@
-# Getting Started with Create React App
+# Image Dataset Cleaner & Review Tool
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern React-based application for importing, reviewing, organizing, and exporting image datasets. Designed for dataset curation workflows, annotation preparation, and image quality review.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+### 📥 Image Import
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* Import **30–100 images** at once
+* Supports:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  * `.jpg`
+  * `.jpeg`
+  * `.png`
 
-### `npm test`
+### 🖼️ Dataset Review
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+* Gallery View for visual inspection
+* Table View for detailed management
+* Quick image preview
 
-### `npm run build`
+### 📊 Metadata Management
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Display and manage:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+* Filename
+* File Type
+* File Size
+* Review Status
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### ✅ Review Workflow
 
-### `npm run eject`
+Mark images as:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+* **Keep**
+* **Reject**
+* **Needs Review**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 🏷️ Organization Tools
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+* Add custom notes
+* Add tags for categorization
+* Filter and manage dataset entries efficiently
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 🔍 Duplicate & Similar Image Detection
 
-## Learn More
+* DUP (Duplicate) image identification
+* SIM (Similar) image detection
+* Helps reduce dataset redundancy
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 📈 Progress Tracking
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+* Real-time statistics
+* Review progress monitoring
+* Status distribution overview
 
-### Code Splitting
+### 📤 Export Options
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Export dataset metadata in:
 
-### Analyzing the Bundle Size
+* CSV format
+* JSON format
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 📝 Activity Logging
 
-### Making a Progressive Web App
+Track:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+* Image imports
+* Metadata updates
+* Review actions
+* Export operations
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🛠️ Tech Stack
 
-### Deployment
+* React
+* JavaScript (ES6+)
+* CSS3
+* JSZip
+* PapaParse
+* Lucide React
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## 📦 Installation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Clone the Repository
+
+```bash
+git clone https://github.com/ankit485803/image-dataset-cleaner-review-tool.git
+```
+
+### Navigate to the Project
+
+```bash
+cd image-dataset-cleaner-review-tool
+```
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Start Development Server
+
+```bash
+npm start
+```
+
+The application will be available at:
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 📁 Supported Formats
+
+| Format | Supported |
+| ------ | --------- |
+| JPG    | ✅         |
+| JPEG   | ✅         |
+| PNG    | ✅         |
+
+---
+
+## 📋 Use Cases
+
+* Dataset cleaning before machine learning training
+* Removing duplicate images
+* Manual image quality review
+* Dataset annotation preparation
+* Research dataset organization
+* Computer vision workflow management
+
+---
+
+## ⚠️ Current Limitations
+
+Current duplicate detection relies on:
+
+* Filename matching
+* Similarity rules
+
+It does not yet perform pixel-level or hash-based image comparison.
+
+---
+
+## 🔮 Future Improvements
+
+Planned enhancements include:
+
+* File hash-based duplicate detection
+* Database persistence
+* AI-assisted image tagging
+* Advanced similarity detection
+* Bulk review operations
+
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to your branch
+5. Open a Pull Request
+
+---
+
+## 📂 Repository
+
+GitHub Repository:
+
+https://github.com/ankit485803/image-dataset-cleaner-review-tool
+
+---
+
