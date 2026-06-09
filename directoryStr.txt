@@ -6,7 +6,7 @@ src/
 │   ├── Gallery.jsx
 │   └── Header.jsx
 │   └── ImportPanel.jsx (handles all import methods)
-│   └── aaa.jsx 
+│   └── ReviewPanel.jsx
 │   └── Header.jsx
 │   └── Header.jsx
 |

@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
+import ReviewPanel from './ReviewPanel';
 
 const STATUS_COLORS = {
-  keep:         { bg: 'rgba(0,212,170,0.15)',   color: 'var(--keep)',   label: '✅ Keep'   },
-  reject:       { bg: 'rgba(255,92,106,0.15)',  color: 'var(--reject)', label: '❌ Reject' },
-  needs_review: { bg: 'rgba(245,166,35,0.15)',  color: 'var(--review)', label: '🔍 Review' },
+  keep:         { bg: 'rgba(0,212,170,0.15)',  color: 'var(--keep)',   label: '✅ Keep'   },
+  reject:       { bg: 'rgba(255,92,106,0.15)', color: 'var(--reject)', label: '❌ Reject' },
+  needs_review: { bg: 'rgba(245,166,35,0.15)', color: 'var(--review)', label: '🔍 Review' },
 };
 
 function Gallery({ images, activeTab, setImages }) {
-  const [view, setView]           = useState('gallery'); // 'gallery' | 'table'
-  const [selected, setSelected]   = useState(null);      // selected image for modal
+  const [view, setView]       = useState('gallery');
+  const [selected, setSelected] = useState(null);
 
   // ── Filter by tab ──
   const filtered = activeTab === 'all'
     ? images
     : images.filter(img => img.status === activeTab);
+
+  // ── Update image fields (status, notes, tags) ──
+  const handleUpdate = (id, changes) => {
+    setImages(prev =>
+      prev.map(img => img.id === id ? { ...img, ...changes } : img)
+    );
+  };
 
   // ── Format helpers ──
   const fmtSize = (bytes) => {
@@ -104,22 +112,22 @@ function Gallery({ images, activeTab, setImages }) {
                   transition: 'transform 0.15s, box-shadow 0.15s',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.transform  = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow  = '0 8px 24px rgba(0,0,0,0.35)';
+                  e.currentTarget.style.transform   = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow   = '0 8px 24px rgba(0,0,0,0.35)';
                   e.currentTarget.style.borderColor = 'var(--accent)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.transform  = 'translateY(0)';
-                  e.currentTarget.style.boxShadow  = 'none';
+                  e.currentTarget.style.transform   = 'translateY(0)';
+                  e.currentTarget.style.boxShadow   = 'none';
                   e.currentTarget.style.borderColor = 'var(--border)';
                 }}
               >
                 {/* Thumbnail */}
                 <div style={{
                   width: '100%', height: '130px',
-                  background: 'var(--surface2)',
+                  background: 'var(--surface2)', overflow: 'hidden',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  overflow: 'hidden', position: 'relative',
+                  position: 'relative',
                 }}>
                   {img.url
                     ? <img src={img.url} alt={img.name}
@@ -130,18 +138,24 @@ function Gallery({ images, activeTab, setImages }) {
                   {img.isDuplicate && (
                     <div style={{
                       position: 'absolute', top: '6px', right: '6px',
+                      background: 'rgba(255,92,106,0.9)', color: '#fff',
+                      fontSize: '10px', fontWeight: '700',
+                      padding: '2px 6px', borderRadius: '4px',
+                    }}>DUP</div>
+                  )}
+                  {/* Similar badge */}
+                  {img.isSimilar && !img.isDuplicate && (
+                    <div style={{
+                      position: 'absolute', top: '6px', right: '6px',
                       background: 'rgba(245,166,35,0.9)', color: '#000',
                       fontSize: '10px', fontWeight: '700',
                       padding: '2px 6px', borderRadius: '4px',
-                    }}>
-                      DUP
-                    </div>
+                    }}>SIM</div>
                   )}
                 </div>
 
-                {/* Metadata */}
+                {/* Card info */}
                 <div style={{ padding: '10px 12px' }}>
-                  {/* Filename */}
                   <div style={{
                     fontSize: '12px', fontWeight: '600', color: 'var(--text)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -150,21 +164,16 @@ function Gallery({ images, activeTab, setImages }) {
                     {img.name}
                   </div>
 
-                  {/* Meta rows */}
                   {[
                     { label: 'Type',   value: img.type?.toUpperCase() || '—' },
                     { label: 'Size',   value: fmtSize(img.size) },
-                    { label: 'Source', value: img.source === 'local' || img.source === 'zip'
-                        ? img.source : 'URL' },
+                    { label: 'Source', value: img.source === 'local' || img.source === 'zip' ? img.source : 'URL' },
                   ].map(row => (
                     <div key={row.label} style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      fontSize: '11px', marginBottom: '2px',
+                      display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px',
                     }}>
                       <span style={{ color: 'var(--text-muted)' }}>{row.label}</span>
-                      <span style={{ color: 'var(--text)', fontWeight: '500' }}>
-                        {row.value}
-                      </span>
+                      <span style={{ color: 'var(--text)', fontWeight: '500' }}>{row.value}</span>
                     </div>
                   ))}
 
@@ -204,7 +213,7 @@ function Gallery({ images, activeTab, setImages }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)' }}>
-                {['#', 'Preview', 'Filename', 'Type', 'Size', 'Source', 'Status', 'Tags', 'Imported'].map(h => (
+                {['#', 'Preview', 'Filename', 'Type', 'Size', 'Source', 'Status', 'Tags', 'Flags', 'Imported'].map(h => (
                   <th key={h} style={{
                     padding: '10px 14px', textAlign: 'left',
                     fontSize: '11px', fontWeight: '700',
@@ -222,11 +231,7 @@ function Gallery({ images, activeTab, setImages }) {
                 return (
                   <tr key={img.id}
                     onClick={() => setSelected(img)}
-                    style={{
-                      borderBottom: '1px solid var(--border)',
-                      cursor: 'pointer',
-                      transition: 'background 0.1s',
-                    }}
+                    style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
@@ -250,11 +255,6 @@ function Gallery({ images, activeTab, setImages }) {
                       <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {img.name}
                       </div>
-                      {img.isDuplicate && (
-                        <span style={{ fontSize: '10px', color: 'var(--review)', fontWeight: '700' }}>
-                          ⚠️ Duplicate
-                        </span>
-                      )}
                     </td>
                     <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>
                       {img.type?.toUpperCase() || '—'}
@@ -262,10 +262,8 @@ function Gallery({ images, activeTab, setImages }) {
                     <td style={{ padding: '10px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {fmtSize(img.size)}
                     </td>
-                    <td style={{ padding: '10px 14px', color: 'var(--text-muted)', maxWidth: '120px' }}>
-                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {img.source === 'local' || img.source === 'zip' ? img.source : 'URL'}
-                      </div>
+                    <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>
+                      {img.source === 'local' || img.source === 'zip' ? img.source : 'URL'}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <span style={{
@@ -281,6 +279,17 @@ function Gallery({ images, activeTab, setImages }) {
                         {img.tags || '—'}
                       </div>
                     </td>
+                    <td style={{ padding: '10px 14px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                      {img.isDuplicate && (
+                        <span style={{ color: 'var(--reject)', fontWeight: '700', marginRight: '4px' }}>DUP</span>
+                      )}
+                      {img.isSimilar && !img.isDuplicate && (
+                        <span style={{ color: 'var(--review)', fontWeight: '700' }}>SIM</span>
+                      )}
+                      {!img.isDuplicate && !img.isSimilar && (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '10px 14px', color: 'var(--text-muted)', fontSize: '11px', whiteSpace: 'nowrap' }}>
                       {fmtDate(img.importedAt)}
                     </td>
@@ -292,85 +301,13 @@ function Gallery({ images, activeTab, setImages }) {
         </div>
       )}
 
-      {/* ── Image Detail Modal ── */}
-      {selected && (
-        <div
-          onClick={() => setSelected(null)}
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.75)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: '24px',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: '14px', width: '100%', maxWidth: '560px',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Modal image */}
-            <div style={{
-              width: '100%', height: '240px',
-              background: 'var(--surface2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {selected.url
-                ? <img src={selected.url} alt={selected.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                : <span style={{ fontSize: '48px' }}>🖼️</span>
-              }
-            </div>
-
-            {/* Modal metadata */}
-            <div style={{ padding: '20px' }}>
-              <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '16px', wordBreak: 'break-all' }}>
-                {selected.name}
-              </div>
-
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
-                marginBottom: '16px',
-              }}>
-                {[
-                  { label: 'File Type',    value: selected.type?.toUpperCase() || '—' },
-                  { label: 'File Size',    value: fmtSize(selected.size) },
-                  { label: 'Source',       value: selected.source || '—' },
-                  { label: 'Status',       value: STATUS_COLORS[selected.status]?.label || '—' },
-                  { label: 'Hash',         value: selected.hash || 'Not computed' },
-                  { label: 'Imported At',  value: fmtDate(selected.importedAt) },
-                  { label: 'Tags',         value: selected.tags || '—' },
-                  { label: 'Notes',        value: selected.notes || '—' },
-                ].map(row => (
-                  <div key={row.label} style={{
-                    background: 'var(--surface2)', borderRadius: '8px',
-                    padding: '10px 12px',
-                  }}>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                      {row.label}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: '500', wordBreak: 'break-all' }}>
-                      {row.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button onClick={() => setSelected(null)} style={{
-                width: '100%', padding: '10px',
-                background: 'var(--surface2)', border: '1px solid var(--border)',
-                borderRadius: '8px', color: 'var(--text-muted)',
-                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-              }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Review Panel ── */}
+      <ReviewPanel
+        image={selected ? images.find(img => img.id === selected.id) : null}
+        allImages={images}
+        onUpdate={handleUpdate}
+        onClose={() => setSelected(null)}
+      />
 
     </div>
   );
