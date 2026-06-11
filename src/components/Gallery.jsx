@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import ReviewPanel from './ReviewPanel';
+import DuplicateReviewPanel from './DuplicateReviewPanel';
+import { computeAllHashes, groupDuplicates, groupSimilar } from '../utils/hashUtils';
 
 const STATUS_COLORS = {
   keep:         { bg: 'rgba(0,212,170,0.15)',  color: 'var(--keep)',   label: '✅ Keep'   },
@@ -7,19 +9,55 @@ const STATUS_COLORS = {
   needs_review: { bg: 'rgba(245,166,35,0.15)', color: 'var(--review)', label: '🔍 Review' },
 };
 
-function Gallery({ images, activeTab, setImages }) {
-  const [view, setView]       = useState('gallery');
-  const [selected, setSelected] = useState(null);
+function Gallery({ images, activeTab, setImages, onUpdate }) {
+  const [view, setView]                   = useState('gallery');
+  const [selected, setSelected]           = useState(null);
+  const [showDupPanel, setShowDupPanel]   = useState(false);
+  const [isHashing, setIsHashing]         = useState(false);
+  const [hashProgress, setHashProgress]   = useState(0);
+  const [duplicateGroups, setDuplicateGroups] = useState([]);
+  const [similarGroups, setSimilarGroups]     = useState([]);
 
   // ── Filter by tab ──
   const filtered = activeTab === 'all'
     ? images
     : images.filter(img => img.status === activeTab);
 
-  // ── Update image fields (status, notes, tags) ──
+  // ── Update image fields ──
   const handleUpdate = (id, changes) => {
     setImages(prev =>
       prev.map(img => img.id === id ? { ...img, ...changes } : img)
+    );
+  };
+
+  // ── Run Review: hash all → find groups → open panel ──
+  const handleRunReview = async () => {
+    if (images.length === 0) return;
+    setShowDupPanel(true);
+    setIsHashing(true);
+    setHashProgress(0);
+
+    // compute hashes with progress
+    const hashed = await computeAllHashes(images, (pct) => {
+      setHashProgress(pct);
+    });
+
+    // update images with hashes in state
+    setImages(hashed);
+
+    // find groups
+    const dupGroups = groupDuplicates(hashed);
+    const simGroups = groupSimilar(hashed);
+
+    setDuplicateGroups(dupGroups);
+    setSimilarGroups(simGroups);
+    setIsHashing(false);
+  };
+
+  // ── Handle action from DuplicateReviewPanel ──
+  const handleDupAction = (id, status) => {
+    setImages(prev =>
+      prev.map(img => img.id === id ? { ...img, status } : img)
     );
   };
 
@@ -58,10 +96,11 @@ function Gallery({ images, activeTab, setImages }) {
   return (
     <div>
 
-      {/* ── Top bar ── */}
+      {/* ── Top Bar ── */}
       <div style={{
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: '20px',
+        flexWrap: 'wrap', gap: '10px',
       }}>
         <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           Showing{' '}
@@ -71,26 +110,42 @@ function Gallery({ images, activeTab, setImages }) {
           {' '}images
         </div>
 
-        {/* View toggle */}
-        <div style={{
-          display: 'flex', gap: '4px',
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: '8px', padding: '4px',
-        }}>
-          {[
-            { key: 'gallery', icon: '⊞', label: 'Gallery' },
-            { key: 'table',   icon: '☰', label: 'Table'   },
-          ].map(v => (
-            <button key={v.key} onClick={() => setView(v.key)}
-              style={{
-                padding: '5px 12px', borderRadius: '6px', border: 'none',
-                background: view === v.key ? 'var(--accent)' : 'transparent',
-                color: view === v.key ? '#fff' : 'var(--text-muted)',
-                fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-              }}>
-              {v.icon} {v.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+          {/* Run Review Button */}
+          <button onClick={handleRunReview}
+            style={{
+              padding: '7px 16px', borderRadius: '8px',
+              border: '1px solid var(--accent)',
+              background: 'rgba(108,99,255,0.15)',
+              color: 'var(--accent)',
+              fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+            🔍 Run Review
+          </button>
+
+          {/* View Toggle */}
+          <div style={{
+            display: 'flex', gap: '4px',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: '8px', padding: '4px',
+          }}>
+            {[
+              { key: 'gallery', icon: '⊞', label: 'Gallery' },
+              { key: 'table',   icon: '☰', label: 'Table'   },
+            ].map(v => (
+              <button key={v.key} onClick={() => setView(v.key)}
+                style={{
+                  padding: '5px 12px', borderRadius: '6px', border: 'none',
+                  background: view === v.key ? 'var(--accent)' : 'transparent',
+                  color: view === v.key ? '#fff' : 'var(--text-muted)',
+                  fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                }}>
+                {v.icon} {v.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -134,7 +189,6 @@ function Gallery({ images, activeTab, setImages }) {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <span style={{ fontSize: '32px' }}>🖼️</span>
                   }
-                  {/* Duplicate badge */}
                   {img.isDuplicate && (
                     <div style={{
                       position: 'absolute', top: '6px', right: '6px',
@@ -143,7 +197,6 @@ function Gallery({ images, activeTab, setImages }) {
                       padding: '2px 6px', borderRadius: '4px',
                     }}>DUP</div>
                   )}
-                  {/* Similar badge */}
                   {img.isSimilar && !img.isDuplicate && (
                     <div style={{
                       position: 'absolute', top: '6px', right: '6px',
@@ -163,21 +216,19 @@ function Gallery({ images, activeTab, setImages }) {
                   }}>
                     {img.name}
                   </div>
-
                   {[
                     { label: 'Type',   value: img.type?.toUpperCase() || '—' },
                     { label: 'Size',   value: fmtSize(img.size) },
                     { label: 'Source', value: img.source === 'local' || img.source === 'zip' ? img.source : 'URL' },
                   ].map(row => (
                     <div key={row.label} style={{
-                      display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px',
+                      display: 'flex', justifyContent: 'space-between',
+                      fontSize: '11px', marginBottom: '2px',
                     }}>
                       <span style={{ color: 'var(--text-muted)' }}>{row.label}</span>
                       <span style={{ color: 'var(--text)', fontWeight: '500' }}>{row.value}</span>
                     </div>
                   ))}
-
-                  {/* Status badge */}
                   <div style={{
                     marginTop: '8px', display: 'inline-block',
                     fontSize: '10px', fontWeight: '700',
@@ -186,8 +237,6 @@ function Gallery({ images, activeTab, setImages }) {
                   }}>
                     {s.label}
                   </div>
-
-                  {/* Tags */}
                   {img.tags && (
                     <div style={{
                       marginTop: '6px', fontSize: '10px',
@@ -301,13 +350,26 @@ function Gallery({ images, activeTab, setImages }) {
         </div>
       )}
 
-      {/* ── Review Panel ── */}
+      {/* ── Review Panel (single image) ── */}
       <ReviewPanel
         image={selected ? images.find(img => img.id === selected.id) : null}
         allImages={images}
         onUpdate={handleUpdate}
         onClose={() => setSelected(null)}
       />
+
+      {/* ── Duplicate Review Panel ── */}
+      {showDupPanel && (
+        <DuplicateReviewPanel
+          duplicateGroups={duplicateGroups}
+          similarGroups={similarGroups}
+          allImages={images}
+          onAction={handleDupAction}
+          onClose={() => setShowDupPanel(false)}
+          progress={hashProgress}
+          isHashing={isHashing}
+        />
+      )}
 
     </div>
   );

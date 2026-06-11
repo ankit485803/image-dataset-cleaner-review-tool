@@ -3,12 +3,18 @@
 src/
 ├── components/
 │   ├── Sidebar.jsx
-│   ├── Gallery.jsx
+│   ├── Gallery.jsx  (add "Run Review" button)
 │   └── Header.jsx
 │   └── ImportPanel.jsx (handles all import methods)
 │   └── ReviewPanel.jsx
-│   └── Header.jsx
-│   └── Header.jsx
+│   └── DuplicateReviewPanel.jsx  (split panel UI)
+│   └── H
+│   └── H
+|
+├── utils/
+│   ├── hashUtils.js (hashing logic)
+│   └── H
+│   └── H
 |
 ├── App.jsx  (main layout)
 ├── Sidebar.jsx (navigation + stats)
