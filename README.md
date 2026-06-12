@@ -225,8 +225,17 @@ Contributions, issues, and feature requests are welcome.
 
 ## 📂 Repository
 
-GitHub Repository:
+🔗 Project Links
 
+Live Application:
+https://imgdatacleaner.researchkart.in/
+(Available until August 2026)
+
+Project Demo Video:
+https://youtu.be/YvDj6aZ5N3I?si=YguC0pC4IJYtfNK7
+
+Source Code Repository:
 https://github.com/ankit485803/image-dataset-cleaner-review-tool
+
 
 ---
