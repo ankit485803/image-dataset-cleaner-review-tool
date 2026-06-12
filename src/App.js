@@ -1,20 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Gallery from './components/Gallery';
 import ImportPanel from './components/ImportPanel';
+import { saveSession, loadSession, clearSession, hasSession } from './utils/dbUtils';
 
 function App() {
   const [images, setImages]       = useState([]);
   const [activeTab, setActiveTab] = useState('all');
 
+  // ── Session state ──
+  const [hasSavedSession, setHasSavedSession] = useState(false);
+  const [lastSaved, setLastSaved]             = useState(null);
+  const [isSaving, setIsSaving]               = useState(false);
+
+  // ── Activity log ──
+  const [logs, setLogs] = useState([]);
+
+  const addLog = (action, details) => {
+    setLogs(prev => [
+      ...prev,
+      { timestamp: new Date().toISOString(), action, details },
+    ]);
+  };
+
+  // ── On mount: check if a saved session exists ──
+  useEffect(() => {
+    hasSession().then(setHasSavedSession);
+  }, []);
+
   // ── Add new images (cap at 100) ──
-  const handleImport = (newImages) => {
+  const handleImportWithFlags = (newImages) => {
     setImages(prev => {
-      const combined = [...prev, ...newImages];
-      return combined.slice(0, 100);
+      const combined = [...prev, ...newImages].slice(0, 100);
+      return flagDuplicatesAndSimilar(combined);
     });
+    addLog('import', `Imported ${newImages.length} image(s)`);
   };
 
   // ── Update a single image (status, notes, tags) ──
@@ -22,9 +44,11 @@ function App() {
     setImages(prev =>
       prev.map(img => img.id === id ? { ...img, ...changes } : img)
     );
+    const changeDesc = Object.entries(changes).map(([k, v]) => `${k}=${v}`).join(', ');
+    addLog('edit', `Image ${id} updated → ${changeDesc}`);
   };
 
-  // ── Auto-flag duplicates + similar after every import ──
+  // ── Auto-flag duplicates + similar ──
   const flagDuplicatesAndSimilar = (imgs) => {
     const similarity = (a, b) => {
       if (a === b) return 1;
@@ -61,12 +85,54 @@ function App() {
     });
   };
 
-  // ── Import + auto-flag ──
-  const handleImportWithFlags = (newImages) => {
-    setImages(prev => {
-      const combined = [...prev, ...newImages].slice(0, 100);
-      return flagDuplicatesAndSimilar(combined);
-    });
+  // ── Save session ──
+  const handleSaveSession = async () => {
+    if (images.length === 0) {
+      alert('Nothing to save — import some images first.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await saveSession(images);
+      const now = new Date().toISOString();
+      setLastSaved(now);
+      setHasSavedSession(true);
+      addLog('save', `Session saved with ${images.length} image(s)`);
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Failed to save session. Check console for details.');
+    }
+    setIsSaving(false);
+  };
+
+  // ── Load session ──
+  const handleLoadSession = async () => {
+    try {
+      const session = await loadSession();
+      if (!session) {
+        alert('No saved session found.');
+        return;
+      }
+      setImages(session.images);
+      setLastSaved(session.savedAt);
+      addLog('load', `Session loaded with ${session.images.length} image(s)`);
+    } catch (err) {
+      console.error('Load failed:', err);
+      alert('Failed to load session. Check console for details.');
+    }
+  };
+
+  // ── New session (clear everything) ──
+  const handleNewSession = async () => {
+    if (images.length > 0) {
+      const confirmClear = window.confirm(
+        'Start a new session? Unsaved changes will be lost (saved sessions stay in storage unless cleared).'
+      );
+      if (!confirmClear) return;
+    }
+    setImages([]);
+    setActiveTab('all');
+    addLog('new_session', 'Started a new session');
   };
 
   // ── Stats for sidebar ──
@@ -81,7 +147,14 @@ function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header
+        onSaveSession={handleSaveSession}
+        onLoadSession={handleLoadSession}
+        onNewSession={handleNewSession}
+        hasSavedSession={hasSavedSession}
+        lastSaved={lastSaved}
+        isSaving={isSaving}
+      />
       <div className="main-layout">
         <Sidebar
           stats={stats}
@@ -98,6 +171,7 @@ function App() {
             activeTab={activeTab}
             setImages={setImages}
             onUpdate={handleUpdate}
+            logs={logs}
           />
         </div>
       </div>

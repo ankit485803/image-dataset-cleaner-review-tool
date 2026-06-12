@@ -14,6 +14,7 @@ src/
 ├── utils/
 │   ├── hashUtils.js (hashing logic)
 │   └── exportUtils.js (export logic for builds JSON, CSV, and ZIP)
+│   └── dbUtils.js  (save/load/clear session (images + blobs + status/tags/notes))
 │   └── H
 |
 ├── App.js  (main layout)
