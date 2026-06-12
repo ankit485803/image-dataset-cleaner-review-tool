@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReviewPanel from './ReviewPanel';
 import DuplicateReviewPanel from './DuplicateReviewPanel';
 import { computeAllHashes, groupDuplicates, groupSimilar } from '../utils/hashUtils';
+import { exportAsJSON, exportAsCSV, exportAsZip } from '../utils/exportUtils';
 
 const STATUS_COLORS = {
   keep:         { bg: 'rgba(0,212,170,0.15)',  color: 'var(--keep)',   label: '✅ Keep'   },
@@ -9,14 +10,19 @@ const STATUS_COLORS = {
   needs_review: { bg: 'rgba(245,166,35,0.15)', color: 'var(--review)', label: '🔍 Review' },
 };
 
-function Gallery({ images, activeTab, setImages, onUpdate }) {
-  const [view, setView]                   = useState('gallery');
-  const [selected, setSelected]           = useState(null);
-  const [showDupPanel, setShowDupPanel]   = useState(false);
-  const [isHashing, setIsHashing]         = useState(false);
-  const [hashProgress, setHashProgress]   = useState(0);
+function Gallery({ images, activeTab, setImages, onUpdate, logs = [] }) {
+  const [view, setView]                       = useState('gallery');
+  const [selected, setSelected]               = useState(null);
+  const [showDupPanel, setShowDupPanel]       = useState(false);
+  const [isHashing, setIsHashing]             = useState(false);
+  const [hashProgress, setHashProgress]       = useState(0);
   const [duplicateGroups, setDuplicateGroups] = useState([]);
   const [similarGroups, setSimilarGroups]     = useState([]);
+
+  // ── Export dropdown state ──
+  const [showExportMenu, setShowExportMenu]   = useState(false);
+  const [isExportingZip, setIsExportingZip]   = useState(false);
+  const [zipProgress, setZipProgress]         = useState(0);
 
   // ── Filter by tab ──
   const filtered = activeTab === 'all'
@@ -37,15 +43,12 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
     setIsHashing(true);
     setHashProgress(0);
 
-    // compute hashes with progress
     const hashed = await computeAllHashes(images, (pct) => {
       setHashProgress(pct);
     });
 
-    // update images with hashes in state
     setImages(hashed);
 
-    // find groups
     const dupGroups = groupDuplicates(hashed);
     const simGroups = groupSimilar(hashed);
 
@@ -59,6 +62,30 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
     setImages(prev =>
       prev.map(img => img.id === id ? { ...img, status } : img)
     );
+  };
+
+  // ── Export handlers ──
+  const handleExportJSON = () => {
+    exportAsJSON(images, logs);
+    setShowExportMenu(false);
+  };
+
+  const handleExportCSV = () => {
+    exportAsCSV(images);
+    setShowExportMenu(false);
+  };
+
+  const handleExportZip = async () => {
+    setShowExportMenu(false);
+    setIsExportingZip(true);
+    setZipProgress(0);
+    try {
+      await exportAsZip(images, logs, (pct) => setZipProgress(pct));
+    } catch (err) {
+      console.error('ZIP export failed:', err);
+      alert('ZIP export failed. Check console for details.');
+    }
+    setIsExportingZip(false);
   };
 
   // ── Format helpers ──
@@ -125,6 +152,59 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
             🔍 Run Review
           </button>
 
+          {/* Export Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowExportMenu(prev => !prev)}
+              disabled={isExportingZip}
+              style={{
+                padding: '7px 16px', borderRadius: '8px',
+                border: '1px solid var(--accent2)',
+                background: 'rgba(0,212,170,0.15)',
+                color: 'var(--accent2)',
+                fontSize: '12px', fontWeight: '700',
+                cursor: isExportingZip ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                opacity: isExportingZip ? 0.6 : 1,
+              }}>
+              {isExportingZip ? `⏳ Exporting ${zipProgress}%` : '⬇️ Export'}
+            </button>
+
+            {showExportMenu && !isExportingZip && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: '10px', overflow: 'hidden',
+                minWidth: '220px', zIndex: 50,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              }}>
+                <button onClick={handleExportJSON} style={menuItemStyle}>
+                  <span>📄</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontWeight: '600' }}>Download JSON</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Metadata only</div>
+                  </div>
+                </button>
+                <button onClick={handleExportCSV} style={menuItemStyle}>
+                  <span>📊</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontWeight: '600' }}>Download CSV</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Metadata only</div>
+                  </div>
+                </button>
+                <button onClick={handleExportZip} style={{ ...menuItemStyle, borderBottom: 'none' }}>
+                  <span>📦</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontWeight: '600' }}>Download Full ZIP</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Images + CSV + JSON + logs
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* View Toggle */}
           <div style={{
             display: 'flex', gap: '4px',
@@ -148,6 +228,30 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
           </div>
         </div>
       </div>
+
+      {/* ── ZIP export progress bar ── */}
+      {isExportingZip && (
+        <div style={{
+          marginBottom: '16px', background: 'var(--surface)',
+          border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 16px',
+        }}>
+          <div style={{
+            fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px',
+            display: 'flex', justifyContent: 'space-between',
+          }}>
+            <span>📦 Building ZIP export...</span>
+            <span style={{ color: 'var(--accent2)', fontWeight: '700' }}>{zipProgress}%</span>
+          </div>
+          <div style={{ height: '6px', background: 'var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '6px',
+              width: `${zipProgress}%`,
+              background: 'linear-gradient(90deg, var(--accent), var(--accent2))',
+              transition: 'width 0.3s ease',
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* ── Gallery View ── */}
       {view === 'gallery' && (
@@ -177,7 +281,6 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
                   e.currentTarget.style.borderColor = 'var(--border)';
                 }}
               >
-                {/* Thumbnail */}
                 <div style={{
                   width: '100%', height: '130px',
                   background: 'var(--surface2)', overflow: 'hidden',
@@ -207,7 +310,6 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
                   )}
                 </div>
 
-                {/* Card info */}
                 <div style={{ padding: '10px 12px' }}>
                   <div style={{
                     fontSize: '12px', fontWeight: '600', color: 'var(--text)',
@@ -374,5 +476,15 @@ function Gallery({ images, activeTab, setImages, onUpdate }) {
     </div>
   );
 }
+
+// ── Shared style for export menu items ──
+const menuItemStyle = {
+  display: 'flex', alignItems: 'center', gap: '10px',
+  width: '100%', padding: '10px 14px',
+  background: 'transparent', border: 'none',
+  borderBottom: '1px solid var(--border)',
+  color: 'var(--text)', fontSize: '12px',
+  cursor: 'pointer', textAlign: 'left',
+};
 
 export default Gallery;

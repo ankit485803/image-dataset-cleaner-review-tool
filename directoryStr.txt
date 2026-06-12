@@ -2,9 +2,9 @@
 
 src/
 ├── components/
-│   ├── Sidebar.jsx
-│   ├── Gallery.jsx  (add "Run Review" button)
-│   └── Header.jsx
+│   ├── Sidebar.jsx  (navigation + stats)
+│   ├── Gallery.jsx  (add "Run Review" button, add Export button with dropdown (JSON / Full ZIP))
+│   └── Header.jsx (top bar)
 │   └── ImportPanel.jsx (handles all import methods)
 │   └── ReviewPanel.jsx
 │   └── DuplicateReviewPanel.jsx  (split panel UI)
@@ -13,13 +13,10 @@ src/
 |
 ├── utils/
 │   ├── hashUtils.js (hashing logic)
-│   └── H
+│   └── exportUtils.js (export logic for builds JSON, CSV, and ZIP)
 │   └── H
 |
-├── App.jsx  (main layout)
-├── Sidebar.jsx (navigation + stats)
-├── Header.jsx (top bar)
-├── Gallery.jsx (empty grid placeholder for now)
+├── App.js  (main layout)
 ├── App.css   (styling)
 └── index.js
 
