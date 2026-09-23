@@ -229,7 +229,7 @@ Contributions, issues, and feature requests are welcome.
 
 Live Application:
 https://imgdatacleaner.researchkart.in/
-(Available until August 2026)
+(Available until August 2027)
 
 Project Demo Video:
 https://youtu.be/YvDj6aZ5N3I?si=YguC0pC4IJYtfNK7
